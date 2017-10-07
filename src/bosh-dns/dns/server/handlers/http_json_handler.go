@@ -9,17 +9,19 @@ import (
 	"net/url"
 	"strconv"
 
+	"bosh-dns/dns/server/records/dnsresolver"
+
 	"github.com/cloudfoundry/bosh-utils/httpclient"
 	"github.com/cloudfoundry/bosh-utils/logger"
 	"github.com/miekg/dns"
-	"bosh-dns/dns/server/records/dnsresolver"
 )
 
 type HTTPJSONHandler struct {
-	address string
-	client  *httpclient.HTTPClient
-	logger  logger.Logger
-	logTag  string
+	address            string
+	client             *httpclient.HTTPClient
+	logger             logger.Logger
+	logTag             string
+	recursionAvailable bool
 }
 
 type Answer struct {
@@ -34,15 +36,16 @@ type httpDNSMessage struct {
 	Answer    []Answer `json:"Answer"`
 }
 
-func NewHTTPJSONHandler(address string, logger logger.Logger) HTTPJSONHandler {
+func NewHTTPJSONHandler(address string, logger logger.Logger, recursionAvailable bool) HTTPJSONHandler {
 	return HTTPJSONHandler{
 		address: address,
 		client: httpclient.NewHTTPClient(
 			httpclient.DefaultClient,
 			logger,
 		),
-		logger: logger,
-		logTag: "HTTPJSONHandler",
+		logger:             logger,
+		logTag:             "HTTPJSONHandler",
+		recursionAvailable: recursionAvailable,
 	}
 }
 

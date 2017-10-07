@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"bosh-dns/dns/server/handlers/internal"
 	"fmt"
 	"net"
 	"strings"
@@ -14,11 +13,12 @@ import (
 )
 
 type ForwardHandler struct {
-	clock            clock.Clock
-	recursors        RecursorPool
-	exchangerFactory ExchangerFactory
-	logger           logger.Logger
-	logTag           string
+	clock              clock.Clock
+	recursors          RecursorPool
+	exchangerFactory   ExchangerFactory
+	logger             logger.Logger
+	logTag             string
+	recursionAvailable bool
 }
 
 //go:generate counterfeiter . Exchanger
@@ -33,13 +33,14 @@ type Cache interface {
 	GetExpired(*dns.Msg) *dns.Msg
 }
 
-func NewForwardHandler(recursors RecursorPool, exchangerFactory ExchangerFactory, clock clock.Clock, logger logger.Logger) ForwardHandler {
+func NewForwardHandler(recursors RecursorPool, recursionAvailable bool, exchangerFactory ExchangerFactory, clock clock.Clock, logger logger.Logger) ForwardHandler {
 	return ForwardHandler{
-		recursors:        recursors,
-		exchangerFactory: exchangerFactory,
-		clock:            clock,
-		logger:           logger,
-		logTag:           "ForwardHandler",
+		recursors:          recursors,
+		exchangerFactory:   exchangerFactory,
+		clock:              clock,
+		logger:             logger,
+		logTag:             "ForwardHandler",
+		recursionAvailable: recursionAvailable,
 	}
 }
 
@@ -51,6 +52,12 @@ func (r ForwardHandler) ServeDNS(responseWriter dns.ResponseWriter, request *dns
 		return
 	}
 
+	if !r.recursionAvailable {
+		r.writeNoResponseMessage(responseWriter, request, false)
+		r.logRecursor(before, request, dns.RcodeServerFailure, "no recursors configured")
+		return
+	}
+
 	network := r.network(responseWriter)
 
 	client := r.exchangerFactory(network)
@@ -59,6 +66,7 @@ func (r ForwardHandler) ServeDNS(responseWriter dns.ResponseWriter, request *dns
 		exchangeAnswer, _, err := client.Exchange(request, recursor)
 		if err == nil || err == dns.ErrTruncated {
 			response := r.compressIfNeeded(responseWriter, request, exchangeAnswer)
+			response.RecursionAvailable = true
 
 			if writeErr := responseWriter.WriteMsg(response); writeErr != nil {
 				r.logger.Error(r.logTag, "error writing response: %s", writeErr.Error())
@@ -74,12 +82,7 @@ func (r ForwardHandler) ServeDNS(responseWriter dns.ResponseWriter, request *dns
 	})
 
 	if err != nil {
-		recursionAvailable := true
-		if _, ok := err.(internal.NoRecursorsError); ok {
-			recursionAvailable = false
-		}
-
-		r.writeNoResponseMessage(responseWriter, request, recursionAvailable)
+		r.writeNoResponseMessage(responseWriter, request, true)
 		r.logRecursor(before, request, dns.RcodeServerFailure, err.Error())
 	}
 }
@@ -145,7 +148,7 @@ func (r ForwardHandler) writeNoResponseMessage(responseWriter dns.ResponseWriter
 func (r ForwardHandler) writeEmptyMessage(responseWriter dns.ResponseWriter, req *dns.Msg) {
 	emptyMessage := &dns.Msg{}
 	r.logger.Info(r.logTag, "received a request with no questions")
-	emptyMessage.RecursionAvailable = false
+	emptyMessage.RecursionAvailable = true
 	emptyMessage.Authoritative = true
 	emptyMessage.SetRcode(req, dns.RcodeSuccess)
 	if err := responseWriter.WriteMsg(emptyMessage); err != nil {

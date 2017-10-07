@@ -15,12 +15,13 @@ import (
 )
 
 type AliasResolvingHandler struct {
-	child          dns.Handler
-	config         aliases.Config
-	domainResolver DomainResolver
-	clock          clock.Clock
-	logger         logger.Logger
-	logTag         string
+	child              dns.Handler
+	config             aliases.Config
+	domainResolver     DomainResolver
+	clock              clock.Clock
+	logger             logger.Logger
+	logTag             string
+	recursionAvailable bool
 }
 
 //go:generate counterfeiter . DomainResolver
@@ -29,18 +30,19 @@ type DomainResolver interface {
 	Resolve(questionDomains []string, responseWriter dns.ResponseWriter, requestMsg *dns.Msg) *dns.Msg
 }
 
-func NewAliasResolvingHandler(child dns.Handler, config aliases.Config, domainResolver DomainResolver, clock clock.Clock, logger logger.Logger) (AliasResolvingHandler, error) {
+func NewAliasResolvingHandler(child dns.Handler, config aliases.Config, domainResolver DomainResolver, recursionAvailable bool, clock clock.Clock, logger logger.Logger) (AliasResolvingHandler, error) {
 	if !config.IsReduced() {
 		return AliasResolvingHandler{}, errors.New("must configure with non-recursing alias config")
 	}
 
 	return AliasResolvingHandler{
-		child:          child,
-		config:         config,
-		domainResolver: domainResolver,
-		clock:          clock,
-		logger:         logger,
-		logTag:         "AliasResolvingHandler",
+		child:              child,
+		config:             config,
+		domainResolver:     domainResolver,
+		clock:              clock,
+		logger:             logger,
+		logTag:             "AliasResolvingHandler",
+		recursionAvailable: recursionAvailable,
 	}, nil
 }
 
@@ -55,6 +57,7 @@ func (h AliasResolvingHandler) ServeDNS(responseWriter dns.ResponseWriter, reque
 
 		responseMsg := h.domainResolver.Resolve(aliasTargets, responseWriter, requestMsg)
 		rcode := responseMsg.Rcode
+		responseMsg.RecursionAvailable = h.recursionAvailable
 
 		if err := responseWriter.WriteMsg(responseMsg); err != nil {
 			h.logger.Error(h.logTag, "error writing response %s", err.Error())

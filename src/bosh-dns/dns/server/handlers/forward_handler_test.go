@@ -9,7 +9,6 @@ import (
 
 	"bosh-dns/dns/server/handlers"
 	"bosh-dns/dns/server/handlers/handlersfakes"
-	"bosh-dns/dns/server/handlers/internal"
 	"bosh-dns/dns/server/internal/internalfakes"
 
 	"github.com/cloudfoundry/bosh-utils/logger/loggerfakes"
@@ -37,6 +36,7 @@ var _ = Describe("ForwardHandler", func() {
 		BeforeEach(func() {
 			fakeWriter = &internalfakes.FakeResponseWriter{}
 			fakeExchanger = &handlersfakes.FakeExchanger{}
+			fakeExchanger.ExchangeReturns(&dns.Msg{}, 0, nil)
 			fakeExchangerFactory = func(net string) handlers.Exchanger {
 				return fakeExchanger
 			}
@@ -54,13 +54,13 @@ var _ = Describe("ForwardHandler", func() {
 				}
 				return err
 			}
-			recursionHandler = handlers.NewForwardHandler(fakeRecursorPool, fakeExchangerFactory, fakeClock, fakeLogger)
+			recursionHandler = handlers.NewForwardHandler(fakeRecursorPool, true, fakeExchangerFactory, fakeClock, fakeLogger)
 		})
 
 		Context("when there are no recursors configured", func() {
 			var msg *dns.Msg
 			BeforeEach(func() {
-				fakeRecursorPool.PerformStrategicallyReturns(internal.NoRecursorsError{})
+				recursionHandler = handlers.NewForwardHandler(fakeRecursorPool, false, fakeExchangerFactory, fakeClock, fakeLogger)
 				msg = &dns.Msg{}
 				msg.SetQuestion("example.com.", dns.TypeANY)
 			})
@@ -77,8 +77,8 @@ var _ = Describe("ForwardHandler", func() {
 				message := fakeWriter.WriteMsgArgsForCall(0)
 				Expect(message.Question).To(Equal(msg.Question))
 				Expect(message.Rcode).To(Equal(dns.RcodeServerFailure))
-				Expect(message.Authoritative).To(Equal(false))
-				Expect(message.RecursionAvailable).To(Equal(false))
+				Expect(message.Authoritative).To(BeFalse())
+				Expect(message.RecursionAvailable).To(BeFalse())
 			})
 		})
 
@@ -103,8 +103,8 @@ var _ = Describe("ForwardHandler", func() {
 				message := fakeWriter.WriteMsgArgsForCall(0)
 				Expect(message.Question).To(Equal(msg.Question))
 				Expect(message.Rcode).To(Equal(dns.RcodeServerFailure))
-				Expect(message.Authoritative).To(Equal(false))
-				Expect(message.RecursionAvailable).To(Equal(true))
+				Expect(message.Authoritative).To(BeFalse())
+				Expect(message.RecursionAvailable).To(BeTrue())
 			})
 
 			Context("when the message fails to write", func() {
@@ -126,8 +126,8 @@ var _ = Describe("ForwardHandler", func() {
 				recursionHandler.ServeDNS(fakeWriter, &dns.Msg{})
 				message := fakeWriter.WriteMsgArgsForCall(0)
 				Expect(message.Rcode).To(Equal(dns.RcodeSuccess))
-				Expect(message.Authoritative).To(Equal(true))
-				Expect(message.RecursionAvailable).To(Equal(false))
+				Expect(message.Authoritative).To(BeTrue())
+				Expect(message.RecursionAvailable).To(BeTrue())
 
 				Expect(fakeLogger.InfoCallCount()).To(Equal(1))
 				tag, msg, _ := fakeLogger.InfoArgsForCall(0)
@@ -172,7 +172,7 @@ var _ = Describe("ForwardHandler", func() {
 					}
 
 					fakeWriter.RemoteAddrReturns(remoteAddrReturns)
-					recursionHandler := handlers.NewForwardHandler(fakeRecursorPool, fakeExchangerFactory, fakeClock, fakeLogger)
+					recursionHandler := handlers.NewForwardHandler(fakeRecursorPool, true, fakeExchangerFactory, fakeClock, fakeLogger)
 
 					m := &dns.Msg{}
 					m.SetQuestion("example.com.", dns.TypeANY)
@@ -225,7 +225,7 @@ var _ = Describe("ForwardHandler", func() {
 					}
 					fakeExchanger := &handlersfakes.FakeExchanger{}
 					fakeExchangerFactory := func(net string) handlers.Exchanger { return fakeExchanger }
-					recursionHandler = handlers.NewForwardHandler(fakeRecursorPool, fakeExchangerFactory, fakeClock, fakeLogger)
+					recursionHandler = handlers.NewForwardHandler(fakeRecursorPool, true, fakeExchangerFactory, fakeClock, fakeLogger)
 					requestMessage = &dns.Msg{}
 					requestMessage.SetQuestion("example.com.", dns.TypeANY)
 					fakeExchanger.ExchangeReturns(recursorAnswer, 0, nil)
@@ -339,8 +339,8 @@ var _ = Describe("ForwardHandler", func() {
 						message := fakeWriter.WriteMsgArgsForCall(0)
 						Expect(message.Question).To(Equal(msg.Question))
 						Expect(message.Rcode).To(Equal(dns.RcodeServerFailure))
-						Expect(message.Authoritative).To(Equal(false))
-						Expect(message.RecursionAvailable).To(Equal(true))
+						Expect(message.Authoritative).To(BeFalse())
+						Expect(message.RecursionAvailable).To(BeTrue())
 					})
 				})
 			})

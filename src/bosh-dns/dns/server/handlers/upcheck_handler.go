@@ -10,19 +10,21 @@ import (
 var localhostIP = net.ParseIP("127.0.0.1")
 
 type UpcheckHandler struct {
-	logger logger.Logger
+	logger             logger.Logger
+	recursionAvailable bool
 }
 
-func NewUpcheckHandler(logger logger.Logger) UpcheckHandler {
+func NewUpcheckHandler(logger logger.Logger, recursionAvailable bool) UpcheckHandler {
 	return UpcheckHandler{
-		logger: logger,
+		logger:             logger,
+		recursionAvailable: recursionAvailable,
 	}
 }
 
 func (h UpcheckHandler) ServeDNS(resp dns.ResponseWriter, req *dns.Msg) {
 	msg := new(dns.Msg)
 	msg.Authoritative = true
-	msg.RecursionAvailable = false
+	msg.RecursionAvailable = h.recursionAvailable
 
 	msg.Answer = append(msg.Answer, &dns.A{
 		Hdr: dns.RR_Header{

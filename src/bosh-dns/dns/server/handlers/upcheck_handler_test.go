@@ -24,7 +24,7 @@ var _ = Describe("UpcheckHandler", func() {
 
 	BeforeEach(func() {
 		fakeLogger = &loggerfakes.FakeLogger{}
-		upcheckHandler = handlers.NewUpcheckHandler(fakeLogger)
+		upcheckHandler = handlers.NewUpcheckHandler(fakeLogger, true)
 		fakeWriter = &internalfakes.FakeResponseWriter{}
 	})
 
@@ -36,8 +36,8 @@ var _ = Describe("UpcheckHandler", func() {
 			upcheckHandler.ServeDNS(fakeWriter, m)
 			message := fakeWriter.WriteMsgArgsForCall(0)
 			Expect(message.Rcode).To(Equal(dns.RcodeSuccess))
-			Expect(message.Authoritative).To(Equal(true))
-			Expect(message.RecursionAvailable).To(Equal(false))
+			Expect(message.Authoritative).To(BeTrue())
+			Expect(message.RecursionAvailable).To(BeTrue())
 			Expect(len(message.Answer)).To(Equal(1))
 			Expect(message.Answer[0]).To(Equal(&dns.A{
 				Hdr: dns.RR_Header{

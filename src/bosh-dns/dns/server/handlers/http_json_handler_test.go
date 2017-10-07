@@ -34,7 +34,7 @@ var _ = Describe("HttpJsonHandler", func() {
 		server = ghttp.NewUnstartedServer()
 		server.AppendHandlers(fakeServerResponse)
 		server.HTTPTestServer.Start()
-		handler = NewHTTPJSONHandler(server.URL(), fakeLogger)
+		handler = NewHTTPJSONHandler(server.URL(), fakeLogger, true)
 	})
 
 	AfterEach(func() {
@@ -129,7 +129,7 @@ var _ = Describe("HttpJsonHandler", func() {
 
 	Context("when it cannot reach the http server", func() {
 		JustBeforeEach(func() {
-			handler = NewHTTPJSONHandler("bogus-address", fakeLogger)
+			handler = NewHTTPJSONHandler("bogus-address", fakeLogger, true)
 		})
 
 		It("logs the error ", func() {

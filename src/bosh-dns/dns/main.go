@@ -113,14 +113,14 @@ func mainExitCode() int {
 
 	handlerRegistrar := handlers.NewHandlerRegistrar(logger, clock, recordsRepo, mux, discoveryHandler)
 
-	handlers.AddHandler(mux, clock, "arpa.", handlers.NewArpaHandler(logger), logger)
+	handlers.AddHandler(mux, clock, "arpa.", handlers.NewArpaHandler(logger, recursionAvailable), logger)
 
 	for _, handler := range config.Handlers {
 		if handler.Source.Type == "http" {
 			var dnsHandler dns.Handler
-			dnsHandler = handlers.NewHTTPJSONHandler(handler.Source.URL, logger)
+			dnsHandler = handlers.NewHTTPJSONHandler(handler.Source.URL, logger, recursionAvailable)
 			if handler.Cache.Enabled {
-				dnsHandler =  handlers.NewCachingDNSHandler(dnsHandler)
+				dnsHandler = handlers.NewCachingDNSHandler(dnsHandler)
 			}
 			handlers.AddHandler(mux, clock, handler.Domain, dnsHandler, logger)
 		}
@@ -128,20 +128,20 @@ func mainExitCode() int {
 
 	upchecks := []server.Upcheck{}
 	for _, upcheckDomain := range config.UpcheckDomains {
-		handlers.AddHandler(mux, clock, upcheckDomain, handlers.NewUpcheckHandler(logger), logger)
+		handlers.AddHandler(mux, clock, upcheckDomain, handlers.NewUpcheckHandler(logger, recursionAvailable), logger)
 		upchecks = append(upchecks, server.NewDNSAnswerValidatingUpcheck(fmt.Sprintf("%s:%d", config.Address, config.Port), upcheckDomain, "udp"))
 		upchecks = append(upchecks, server.NewDNSAnswerValidatingUpcheck(fmt.Sprintf("%s:%d", config.Address, config.Port), upcheckDomain, "tcp"))
 	}
 
 	recursorPool := handlers.NewFailoverRecursorPool(config.Recursors, logger)
-	forwardHandler := handlers.NewForwardHandler(recursorPool, handlers.NewExchangerFactory(time.Duration(config.RecursorTimeout)), clock, logger)
+	forwardHandler := handlers.NewForwardHandler(recursorPool, recursionAvailable, handlers.NewExchangerFactory(time.Duration(config.RecursorTimeout)), clock, logger)
 	if config.Cache.Enabled {
 		mux.Handle(".", handlers.NewCachingDNSHandler(forwardHandler))
 	} else {
 		mux.Handle(".", forwardHandler)
 	}
 
-	aliasResolver, err := handlers.NewAliasResolvingHandler(mux, aliasConfiguration, localDomain, clock, logger)
+	aliasResolver, err := handlers.NewAliasResolvingHandler(mux, aliasConfiguration, localDomain, recursionAvailable, clock, logger)
 	if err != nil {
 		logger.Error(logTag, fmt.Sprintf("could not initiate alias resolving handler: %s", err.Error()))
 		return 1

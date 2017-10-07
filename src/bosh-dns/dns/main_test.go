@@ -86,12 +86,12 @@ var _ = Describe("main", func() {
 
 	Context("when the server starts successfully", func() {
 		var (
-			cmd             *exec.Cmd
-			session         *gexec.Session
-			aliasesDir      string
-			recordsFilePath string
-			checkInterval   string
-			httpJSONServer  *ghttp.Server
+			cmd                    *exec.Cmd
+			session                *gexec.Session
+			aliasesDir             string
+			recordsFilePath        string
+			checkInterval          string
+			httpJSONServer         *ghttp.Server
 			httpJSONCachingEnabled bool
 		)
 
@@ -398,7 +398,7 @@ var _ = Describe("main", func() {
 					Expect(err).NotTo(HaveOccurred())
 					Expect(r.Rcode).To(Equal(dns.RcodeServerFailure))
 					Expect(r.Authoritative).To(BeTrue())
-					Expect(r.RecursionAvailable).To(BeFalse())
+					Expect(r.RecursionAvailable).To(BeTrue())
 				})
 
 				It("logs handler time", func() {

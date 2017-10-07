@@ -71,7 +71,7 @@ var _ = Describe("Upcheck", func() {
 		ports = map[string]int{}
 		addresses = map[string]string{}
 		listenDomain = "127.0.0.1"
-		dnsHandler = handlers.NewUpcheckHandler(&boshlogf.FakeLogger{})
+		dnsHandler = handlers.NewUpcheckHandler(&boshlogf.FakeLogger{}, true)
 	})
 
 	Context("when the upcheck target is a malformed address", func() {
@@ -122,7 +122,6 @@ var _ = Describe("Upcheck", func() {
 
 			err := subject.IsUp()
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(MatchRegexp(`on %s:.*%s.*203\.0\.113\.1.*i/o timeout`, network, network))
 		},
 			Entry("when networking is udp", "udp"),
 			Entry("when networking is tcp", "tcp"),

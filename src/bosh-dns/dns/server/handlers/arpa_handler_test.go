@@ -5,6 +5,7 @@ import (
 
 	"bosh-dns/dns/server/handlers"
 	"bosh-dns/dns/server/internal/internalfakes"
+
 	"github.com/miekg/dns"
 
 	"github.com/cloudfoundry/bosh-utils/logger/loggerfakes"
@@ -24,7 +25,7 @@ var _ = Describe("ArpaHandler", func() {
 			fakeLogger = &loggerfakes.FakeLogger{}
 			fakeWriter = &internalfakes.FakeResponseWriter{}
 
-			arpaHandler = handlers.NewArpaHandler(fakeLogger)
+			arpaHandler = handlers.NewArpaHandler(fakeLogger, true)
 		})
 
 		Context("when there are no questions", func() {
@@ -32,8 +33,8 @@ var _ = Describe("ArpaHandler", func() {
 				arpaHandler.ServeDNS(fakeWriter, &dns.Msg{})
 				message := fakeWriter.WriteMsgArgsForCall(0)
 				Expect(message.Rcode).To(Equal(dns.RcodeSuccess))
-				Expect(message.Authoritative).To(Equal(true))
-				Expect(message.RecursionAvailable).To(Equal(false))
+				Expect(message.Authoritative).To(BeTrue())
+				Expect(message.RecursionAvailable).To(BeTrue())
 			})
 		})
 
@@ -45,8 +46,8 @@ var _ = Describe("ArpaHandler", func() {
 				arpaHandler.ServeDNS(fakeWriter, m)
 				message := fakeWriter.WriteMsgArgsForCall(0)
 				Expect(message.Rcode).To(Equal(dns.RcodeServerFailure))
-				Expect(message.Authoritative).To(Equal(true))
-				Expect(message.RecursionAvailable).To(Equal(false))
+				Expect(message.Authoritative).To(BeTrue())
+				Expect(message.RecursionAvailable).To(BeTrue())
 			})
 		})
 

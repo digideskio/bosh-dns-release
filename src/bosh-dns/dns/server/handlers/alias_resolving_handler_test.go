@@ -41,7 +41,7 @@ var _ = Describe("AliasResolvingHandler", func() {
 
 			m := &dns.Msg{}
 			m.Authoritative = true
-			m.RecursionAvailable = false
+			m.RecursionAvailable = true
 			m.SetRcode(req, dns.RcodeServerFailure)
 
 			Expect(resp.WriteMsg(m)).To(Succeed())
@@ -54,7 +54,7 @@ var _ = Describe("AliasResolvingHandler", func() {
 		})
 
 		var err error
-		handler, err = NewAliasResolvingHandler(childHandler, config, fakeDomainResolver, fakeClock, fakeLogger)
+		handler, err = NewAliasResolvingHandler(childHandler, config, fakeDomainResolver, true, fakeClock, fakeLogger)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -73,8 +73,8 @@ var _ = Describe("AliasResolvingHandler", func() {
 
 				response := fakeWriter.WriteMsgArgsForCall(0)
 				Expect(response.Rcode).To(Equal(dns.RcodeServerFailure))
-				Expect(response.Authoritative).To(Equal(true))
-				Expect(response.RecursionAvailable).To(Equal(false))
+				Expect(response.Authoritative).To(BeTrue())
+				Expect(response.RecursionAvailable).To(BeTrue())
 			})
 		})
 
@@ -219,7 +219,7 @@ var _ = Describe("AliasResolvingHandler", func() {
 				"alias2": {"a2_domain1"},
 			})
 
-			_, err := NewAliasResolvingHandler(childHandler, config, fakeDomainResolver, fakeClock, fakeLogger)
+			_, err := NewAliasResolvingHandler(childHandler, config, fakeDomainResolver, true, fakeClock, fakeLogger)
 			Expect(err).To(HaveOccurred())
 		})
 	})
