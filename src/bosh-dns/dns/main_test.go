@@ -427,6 +427,132 @@ var _ = Describe("main", func() {
 				})
 			})
 
+			Context("records API", func() {
+				var healthServers []*ghttp.Server
+
+				BeforeEach(func() {
+					healthServers = []*ghttp.Server{
+						newFakeHealthServer("127.0.0.1", "running"),
+						// sudo ifconfig lo0 alias 127.0.0.2 up # on osx
+						newFakeHealthServer("127.0.0.2", "stopped"),
+					}
+				})
+
+				AfterEach(func() {
+					for _, server := range healthServers {
+						server.Close()
+					}
+				})
+
+				FIt("can get records from the API", func() {
+					// query api listening on :80/instances
+					client := &http.Client{}
+					req, _ := http.NewRequest("GET", fmt.Sprintf("http://%s:%d/instances", listenAddress, 8000), nil)
+					req.Header.Add("Accept", "application/json")
+					resp, err := client.Do(req)
+					Expect(err).NotTo(HaveOccurred())
+					defer resp.Body.Close()
+
+					resp_body, err := ioutil.ReadAll(resp.Body)
+					Expect(err).NotTo(HaveOccurred())
+
+					type instance struct {
+						ID         string `json:"id"`
+						Index      string `json:"index"`
+						Group      string `json:"group"`
+						AZ         string `json:"az"`
+						Network    string `json:"network"`
+						Deployment string `json:"deployment"`
+						Domain     string `json:"domain"`
+						IP         string `json:"ip"`
+						Healthy    bool   `json:"healthy"`
+					}
+
+					var result []instance
+
+					json.Unmarshal(resp_body, &result)
+
+					Expect(result).To(Equal([]instance{
+						{
+							ID:         "my-instance",
+							Index:      "",
+							Group:      "my-group",
+							AZ:         "1",
+							Network:    "my-network",
+							Deployment: "my-deployment",
+							Domain:     "bosh.",
+							IP:         "127.0.0.1",
+							Healthy:    true,
+						},
+						{
+							ID:         "my-instance-1",
+							Index:      "",
+							Group:      "my-group",
+							AZ:         "2",
+							Network:    "my-network",
+							Deployment: "my-deployment",
+							Domain:     "bosh.",
+							IP:         "127.0.0.2",
+							Healthy:    false},
+						{
+							ID:         "my-instance-2",
+							Index:      "",
+							Group:      "my-group",
+							AZ:         "2",
+							Network:    "my-network",
+							Deployment: "my-deployment-2",
+							Domain:     "bosh.",
+							IP:         "127.0.0.3",
+							Healthy:    true},
+						{
+							ID:         "my-instance-1",
+							Index:      "",
+							Group:      "my-group",
+							AZ:         "1",
+							Network:    "my-network",
+							Deployment: "my-deployment",
+							Domain:     "foo.",
+							IP:         "127.0.0.2",
+							Healthy:    true},
+						{
+							ID:         "my-instance-2",
+							Index:      "",
+							Group:      "my-group",
+							AZ:         "2",
+							Network:    "my-network",
+							Deployment: "my-deployment-2",
+							Domain:     "foo.",
+							IP:         "127.0.0.3",
+							Healthy:    true},
+						{
+							ID:         "primer-instance",
+							Index:      "",
+							Group:      "primer-group",
+							AZ:         "1",
+							Network:    "primer-network",
+							Deployment: "primer-deployment",
+							Domain:     "primer.",
+							IP:         "127.0.0.254",
+							Healthy:    true},
+					}))
+					//
+					// assert that the results match our expectations
+					/*
+						[{
+								id         string
+								index      string
+								group      string
+								az         string
+								network    string
+								deployment string
+								domain     string
+								ip         string
+								healthy    bool
+						}]
+					*/
+				})
+			})
+
 			Context("domains from records.json", func() {
 				It("can interpret AZ-specific queries", func() {
 					m.SetQuestion("q-a1s0.my-group.my-network.my-deployment.bosh.", dns.TypeA)

@@ -1,9 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -26,6 +29,10 @@ import (
 	"github.com/cloudfoundry/bosh-utils/system"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	"github.com/miekg/dns"
+)
+
+var (
+	recordSet *records.RecordSet
 )
 
 func parseFlags() (string, error) {
@@ -104,7 +111,7 @@ func mainExitCode() int {
 	shutdown := make(chan struct{})
 
 	fileReader := records.NewFileReader(config.RecordsFile, system.NewOsFileSystem(logger), clock, logger, repoUpdate)
-	recordSet, err := records.NewRecordSet(fileReader, logger)
+	recordSet, err = records.NewRecordSet(fileReader, logger)
 	aliasedRecordSet := aliases.NewAliasedRecordSet(recordSet, aliasConfiguration)
 	healthyRecordSet := healthiness.NewHealthyRecordSet(aliasedRecordSet, healthWatcher, uint(config.Health.MaxTrackedQueries), shutdown)
 
@@ -188,10 +195,50 @@ func mainExitCode() int {
 		close(shutdown)
 	}()
 
+	http.HandleFunc("/instances", instances)
+	go http.ListenAndServe(":8000", nil)
+
 	if err := dnsServer.Run(); err != nil {
 		logger.Error(logTag, err.Error())
 		return 1
 	}
 
 	return 0
+}
+
+type Instance struct {
+	ID         string `json:"id"`
+	Index      string `json:"index"`
+	Group      string `json:"group"`
+	AZ         string `json:"az"`
+	Network    string `json:"network"`
+	Deployment string `json:"deployment"`
+	Domain     string `json:"domain"`
+	IP         string `json:"ip"`
+	Healthy    bool   `json:"healthy"`
+}
+
+func instances(w http.ResponseWriter, r *http.Request) {
+	instances := []Instance{}
+	for _, record := range recordSet.Records {
+		instances = append(instances, Instance{
+			ID:         record.ID,
+			Index:      record.InstanceIndex,
+			Group:      record.Group,
+			AZ:         record.AZID,
+			Network:    record.Network,
+			Deployment: record.Deployment,
+			Domain:     record.Domain,
+			IP:         record.IP,
+			Healthy:    true,
+		})
+	}
+
+	recordJSON, err := json.Marshal(instances)
+	if err != nil {
+		fmt.Printf("Error: %s", err)
+		return
+	}
+
+	io.WriteString(w, string(recordJSON))
 }
