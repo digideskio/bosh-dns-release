@@ -14,6 +14,7 @@ import (
 	dnsconfig "bosh-dns/dns/config"
 	"bosh-dns/dns/server"
 	"bosh-dns/dns/server/aliases"
+	"bosh-dns/dns/server/debughttp"
 	"bosh-dns/dns/server/handlers"
 	"bosh-dns/dns/server/healthiness"
 	"bosh-dns/dns/server/records"
@@ -158,12 +159,20 @@ func mainExitCode() int {
 	}
 
 	bindAddress := fmt.Sprintf("%s:%d", config.Address, config.Port)
+
+	var debugHTTPServer debughttp.Server
+
+	if config.DebugHTTPPort != nil {
+		debugHTTPServer = debughttp.NewServer(logger, *config.DebugHTTPPort, aliasedRecordSet)
+	}
+
 	dnsServer := server.New(
 		[]server.DNSServer{
 			&dns.Server{Addr: bindAddress, Net: "tcp", Handler: mux},
 			&dns.Server{Addr: bindAddress, Net: "udp", Handler: mux, UDPSize: 65535},
 		},
 		upchecks,
+		debugHTTPServer,
 		time.Duration(config.Timeout),
 		time.Duration(5*time.Second),
 		shutdown,

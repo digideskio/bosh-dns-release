@@ -1,9 +1,12 @@
 package aliases
 
+import "bosh-dns/dns/server/records"
+
 //go:generate counterfeiter . RecordSet
 
 type RecordSet interface {
 	Resolve(string) ([]string, error)
+	ResolveFullRecord(string) ([]records.Record, error)
 	Domains() []string
 	Subscribe() <-chan bool
 }
@@ -21,24 +24,36 @@ func NewAliasedRecordSet(recordSet RecordSet, config Config) *AliasedRecordSet {
 }
 
 func (a *AliasedRecordSet) Resolve(domain string) ([]string, error) {
+	records, err := a.ResolveFullRecord(domain)
+	if err != nil {
+		return []string{}, err
+	}
+	var s []string
+	for _, rec := range records {
+		s = append(s, rec.IP)
+	}
+	return s, nil
+}
+
+func (a *AliasedRecordSet) ResolveFullRecord(domain string) ([]records.Record, error) {
 	resolutions := a.config.Resolutions(domain)
 	if len(resolutions) > 0 {
 		var err error
-		ips := []string{}
+		recs := []records.Record{}
 
 		for _, resolution := range resolutions {
-			var hostIPs []string
-			hostIPs, err = a.recordSet.Resolve(resolution)
-			ips = append(ips, hostIPs...)
+			var rec []records.Record
+			rec, err = a.recordSet.ResolveFullRecord(resolution)
+			recs = append(recs, rec...)
 		}
 
-		if len(ips) == 0 && err != nil {
+		if len(recs) == 0 && err != nil {
 			return nil, err
 		}
-		return ips, nil
+		return recs, nil
 	}
 
-	return a.recordSet.Resolve(domain)
+	return a.recordSet.ResolveFullRecord(domain)
 }
 
 func (a *AliasedRecordSet) Subscribe() <-chan bool {

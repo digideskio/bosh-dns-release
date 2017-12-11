@@ -79,11 +79,24 @@ func (r *RecordSet) Resolve(fqdn string) ([]string, error) {
 	if net.ParseIP(fqdn) != nil {
 		return []string{fqdn}, nil
 	}
+	records, err := r.ResolveFullRecord(fqdn)
+	if err != nil {
+		return []string{}, err
+	}
+	var s []string
+	for _, rec := range records {
+		s = append(s, rec.IP)
+	}
+	return s, nil
+}
+
+func (r *RecordSet) ResolveFullRecord(fqdn string) ([]Record, error) {
 
 	r.recordsMutex.RLock()
 	defer r.recordsMutex.RUnlock()
 
 	return r.resolveQuery(fqdn)
+
 }
 
 func (r *RecordSet) Domains() []string {
@@ -117,25 +130,28 @@ func (r *RecordSet) update() {
 	}
 }
 
-func (r *RecordSet) ipsMatching(matcher Matcher) []string {
-	ips := []string{}
+func (r *RecordSet) recordsMatching(matcher Matcher) []Record {
+	rv := []Record{}
 
 	for _, record := range r.Records {
 		if matcher.Match(&record) {
-			ips = append(ips, record.IP)
+			rv = append(rv, record)
 		}
 	}
 
-	return ips
+	return rv
 }
 
-func (r *RecordSet) resolveQuery(fqdn string) ([]string, error) {
-	var ips []string
+func (r *RecordSet) resolveQuery(fqdn string) ([]Record, error) {
+	var rv []Record
 
 	segments := strings.SplitN(fqdn, ".", 2) // [q-s0, q-g7.x.y.bosh]
+	// q-s0
+	// name1.name2.name3.bosh
+	// q-s0a13b91.bosh
 
 	if len(segments) < 2 {
-		return ips, errors.New("domain is malformed")
+		return rv, errors.New("domain is malformed")
 	}
 
 	var tld string
@@ -147,7 +163,7 @@ func (r *RecordSet) resolveQuery(fqdn string) ([]string, error) {
 	}
 
 	if tld == "" {
-		return []string{}, nil
+		return rv, nil
 	}
 
 	groupQuery := strings.TrimSuffix(segments[1], "."+tld)
@@ -157,18 +173,18 @@ func (r *RecordSet) resolveQuery(fqdn string) ([]string, error) {
 	if len(groupSegments) == 1 {
 		filter, err = parseCriteria(segments[0], groupQuery, "", "", "", tld)
 		if err != nil {
-			return ips, err
+			return rv, err
 		}
 	} else if len(groupSegments) == 3 {
 		filter, err = parseCriteria(segments[0], "", groupSegments[0], groupSegments[1], groupSegments[2], tld)
 		if err != nil {
-			return ips, err
+			return rv, err
 		}
 	} else {
 		panic(fmt.Sprintf("Bad group segment query had %d values %#v\n", len(groupSegments), groupSegments))
 	}
 
-	return r.ipsMatching(filter), nil
+	return r.recordsMatching(filter), nil
 }
 
 func createFromJSON(j []byte, logger boshlog.Logger) ([]Record, error) {

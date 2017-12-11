@@ -887,6 +887,107 @@ var _ = Describe("main", func() {
 		})
 	})
 
+	FContext("http debugging endpoint", func() {
+		var listenHTTPPort int
+		var session *gexec.Session
+		var cmd *exec.Cmd
+
+		JustBeforeEach(func() {
+			var err error
+
+			recordsFile, err := ioutil.TempFile("", "recordsjson")
+			Expect(err).NotTo(HaveOccurred())
+
+			listenHTTPPort, err = getFreePort()
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = recordsFile.Write([]byte(fmt.Sprint(`{
+				"record_keys": ["id", "instance_group", "group_ids", "az", "az_id","network", "deployment", "ip", "domain"],
+				"record_infos": [
+					["my-instance", "my-group", ["7"], "az1", "1", "my-network", "my-deployment", "127.0.0.1", "bosh"],
+					["my-instance-1", "my-group", ["7"], "az2", "2", "my-network", "my-deployment", "127.0.0.2", "bosh"],
+					["my-instance-2", "my-group", ["8"], "az2", "2", "my-network", "my-deployment-2", "127.0.0.3", "bosh"],
+					["my-instance-1", "my-group", ["7"], "az1", "1", "my-network", "my-deployment", "127.0.0.2", "foo"],
+					["my-instance-2", "my-group", ["8"], "az2", "2", "my-network", "my-deployment-2", "127.0.0.3", "foo"],
+					["primer-instance", "primer-group", ["9"], "az1", "1", "primer-network", "primer-deployment", "127.0.0.254", "primer"]
+				]
+			}`)))
+			Expect(err).NotTo(HaveOccurred())
+
+			recordsFilePath := recordsFile.Name()
+
+			configContents, err := json.Marshal(map[string]interface{}{
+				"address":         listenAddress,
+				"port":            listenPort,
+				"debug_http_port": listenHTTPPort,
+				"records_file":    recordsFilePath,
+				"upcheck_domains": []string{"health.check.bosh.", "health.check.ca."},
+				"health": map[string]interface{}{
+					"enabled":          true,
+					"port":             2345 + config.GinkgoConfig.ParallelNode,
+					"ca_file":          "../healthcheck/assets/test_certs/test_ca.pem",
+					"certificate_file": "../healthcheck/assets/test_certs/test_client.pem",
+					"private_key_file": "../healthcheck/assets/test_certs/test_client.key",
+					"check_interval":   "2s",
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
+			cmd = newCommandWithConfig(string(configContents))
+
+			session, err = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(waitForServer(listenHTTPPort)).To(Succeed())
+
+			Eventually(func() int {
+				c := http.DefaultClient
+				res, err := c.Head(fmt.Sprintf("http://127.0.0.1:%d/not-found", listenHTTPPort))
+				if err != nil {
+					fmt.Println(err)
+					return http.StatusInternalServerError
+				}
+
+				return res.StatusCode
+			}, 5*time.Second).Should(Equal(http.StatusNotFound))
+		})
+
+		AfterEach(func() {
+			if cmd.Process != nil {
+				session.Kill()
+				session.Wait()
+			}
+		})
+
+		It("instances request needs parameters", func() {
+			c := http.DefaultClient
+			res, err := c.Get(fmt.Sprintf("http://127.0.0.1:%d/instances", listenHTTPPort))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res.StatusCode).To(Equal(http.StatusBadRequest))
+		})
+
+		FIt("answers an /instances query for a known hostname", func() {
+			res, err := http.DefaultClient.Get(fmt.Sprintf("http://127.0.0.1:%d/instances?address=my-instance.my-group.my-network.my-deployment.bosh", listenHTTPPort))
+			Expect(err).ToNot(HaveOccurred())
+
+			bodyBytes, err := ioutil.ReadAll(res.Body)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(string(bodyBytes)).To(Equal(`[
+	{
+		"id": "my-instance",
+		"index": "1",
+		"group": "my-group",
+		"az": "az1",
+		"network": "my-network",
+		"deployment": "my-deployment",
+		"domain": "bosh",
+		"ip": "127.0.0.1",
+		"healthy": true
+	}
+]`))
+		})
+	})
+
 	Context("when specific recursors have been configured", func() {
 		var (
 			cmd     *exec.Cmd

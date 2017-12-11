@@ -13,6 +13,7 @@ import (
 type Config struct {
 	Address         string
 	Port            int
+	DebugHTTPPort   *int `json:"debug_http_port"`
 	Timeout         DurationJSON
 	RecursorTimeout DurationJSON `json:"recursor_timeout"`
 	Recursors       []string

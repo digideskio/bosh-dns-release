@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bosh-dns/dns/server/debughttp"
 	"errors"
 	"sync"
 	"time"
@@ -18,16 +19,18 @@ type DNSServer interface {
 type Server struct {
 	servers         []DNSServer
 	upchecks        []Upcheck
+	debugHTTPServer debughttp.Server
 	timeout         time.Duration
 	upcheckInterval time.Duration
 	shutdownChan    chan struct{}
 	logger          logger.Logger
 }
 
-func New(servers []DNSServer, upchecks []Upcheck, timeout, upcheckInterval time.Duration, shutdownChan chan struct{}, logger logger.Logger) Server {
+func New(servers []DNSServer, upchecks []Upcheck, debugHTTPServer debughttp.Server, timeout, upcheckInterval time.Duration, shutdownChan chan struct{}, logger logger.Logger) Server {
 	return Server{
 		servers:         servers,
 		upchecks:        upchecks,
+		debugHTTPServer: debugHTTPServer,
 		timeout:         timeout,
 		shutdownChan:    shutdownChan,
 		upcheckInterval: upcheckInterval,
@@ -118,6 +121,10 @@ func (s Server) listenAndServe(err chan error) {
 		go func(server DNSServer) {
 			err <- server.ListenAndServe()
 		}(server)
+	}
+
+	if s.debugHTTPServer != nil {
+		s.debugHTTPServer.Serve()
 	}
 }
 
