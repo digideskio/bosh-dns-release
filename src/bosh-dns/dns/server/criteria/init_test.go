@@ -1,4 +1,4 @@
-ackage handlers_test
+package criteria_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -9,5 +9,5 @@ import (
 
 func TestHandlers(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "dns/server/handlers")
+	RunSpecs(t, "dns/server/criteria")
 }

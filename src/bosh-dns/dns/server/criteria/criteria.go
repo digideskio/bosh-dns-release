@@ -137,7 +137,7 @@ func FieldMatcher(field, value string) MatcherFunc {
 	return func(*record.Record) bool { return false }
 }
 
-func parseCriteria(segment segment) (Criteria, error) {
+func parseCriteria(segment Segment) (Criteria, error) {
 	criteriaMap := make(Criteria)
 
 	if strings.HasPrefix(segment.Query, "q-") {
