@@ -9,12 +9,16 @@ image_resource:
 
 inputs:
   - name: bbl-state
+  - name: bosh-deployment
   - name: bosh-dns-release
+  - name: stemcell
+  - name: docker-release
 
-outputs: []
+outputs:
+  - name: docker-vars
 
 params:
   BBL_STATE_SUBDIRECTORY: test-stress/bbl-state
 
 run:
-  path: bosh-dns-release/ci/tasks/test-stress/clean-up.sh
+  path: bosh-dns-release/ci/tasks/test-stress/deploy-docker.sh

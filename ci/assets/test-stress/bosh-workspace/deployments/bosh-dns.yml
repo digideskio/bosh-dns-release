@@ -12,7 +12,7 @@ update:
 instance_groups:
 - instances: ((instances))
   stemcell: default
-  azs: [z1, z2, z3, z4, z5, z6, z7, z8, z9, z10]
+  azs: [d1, d2, d3, d4, d5, d6, d7, d8, d9, d10]
   jobs:
   - name: bosh-dns
     release: bosh-dns
@@ -24,9 +24,9 @@ instance_groups:
       instance_count: ((instances))
   name: bosh-dns
   networks:
-  - name: default
-  vm_type: default
-  vm_extensions: [all_ports]
+  - name: docker_net
+  vm_type: docker
+  vm_extensions: [tcp_22]
 releases:
 - name: bosh-dns
   sha1: e38d3e5edd16ce2dca778440b636ab1ea61f892f

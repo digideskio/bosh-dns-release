@@ -95,9 +95,8 @@ instance_groups:
 
 releases:
 - name: docker
-  sha1: 2f8b65830effb47a45a7278d9d1e649cdf64b9f8
-  url: https://bosh.io/d/github.com/cppforlife/docker-release?v=0.0.3
-  version: 0.0.3
+  url: file://((docker_release))
+  version: latest
 variables:
 - name: docker_ca
   options:

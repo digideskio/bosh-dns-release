@@ -10,7 +10,7 @@ image_resource:
 inputs:
   - name: bbl-state
   - name: bosh-dns-release
-  - name: inner-bosh-vars
+  - name: docker-vars
 
 outputs: []
 

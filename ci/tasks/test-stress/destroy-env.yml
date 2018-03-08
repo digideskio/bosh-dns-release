@@ -9,16 +9,15 @@ image_resource:
 
 inputs:
   - name: bbl-state
-  - name: bosh-deployment
-  - name: bosh-docker-cpi-release
   - name: bosh-dns-release
-  - name: stemcell
 
 outputs:
-  - name: inner-bosh-vars
+  - name: updated-bbl-state
 
 params:
-  BBL_STATE_SUBDIRECTORY: test-stress/bbl-state
+  BBL_AWS_ACCESS_KEY_ID: ""
+  BBL_AWS_SECRET_ACCESS_KEY: ""
+  BBL_STATE_DIR: test-stress/bbl-state
 
 run:
-  path: bosh-dns-release/ci/tasks/test-stress/deploy-inner-bosh.sh
+  path: bosh-dns-release/ci/tasks/test-stress/destroy-env.sh

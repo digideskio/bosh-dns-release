@@ -1,5 +1,4 @@
 cpis:
-
 - name: docker-1
   type: docker
   properties:

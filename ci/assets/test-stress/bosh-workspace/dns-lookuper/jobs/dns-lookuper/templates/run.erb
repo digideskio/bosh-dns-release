@@ -8,17 +8,19 @@ export INSTANCE_COUNT=<%= p('instance_count') %>
 failure=0
 success=0
 
+mkdir -p /var/vcap/sys/log/dns-lookuper/
+
 for deployment_index in $(seq 1 $DEPLOYMENT_COUNT); do
   for instance_index in $(seq 0 $(($INSTANCE_COUNT-1))); do
     host="q-i${instance_index}.bosh-dns.default.${DEPLOYMENT_NAME_PREFIX}-${deployment_index}.bosh"
     if [[ -z "$(dig +short ${host})" ]] ; then
       failure=$((failure+1))
-      echo "Failed to lookup ${host}"
+      echo "Failed to lookup ${host}" >> /var/vcap/sys/log/dns-lookuper/stdout.log
 
       # output some extra debug in case of failure
-      dig upcheck.bosh-dns
-      dig "${host}"
-      uptime
+      dig upcheck.bosh-dns >> /var/vcap/sys/log/dns-lookuper/stdout.log
+      dig "${host}" >> /var/vcap/sys/log/dns-lookuper/stdout.log
+      uptime >> /var/vcap/sys/log/dns-lookuper/stdout.log
     else
       success=$((success+1))
     fi

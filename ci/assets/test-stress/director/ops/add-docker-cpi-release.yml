@@ -3,8 +3,8 @@
   path: /releases/-
   value:
     name: bosh-docker-cpi
-    url: file://((docker_cpi_release_src_path))
-    version: create
+    url: file://((docker_cpi_release_tarball))
+    version: latest
 
 - type: replace
   path: /instance_groups/name=bosh/jobs/-
@@ -26,7 +26,3 @@
           endpoint: http://((internal_ip)):25250
           user: agent
           password: ((blobstore_agent_password))
-
-- type: replace
-  path: /instance_groups/name=bosh/properties/director/cpi_job?
-  value: docker_cpi
