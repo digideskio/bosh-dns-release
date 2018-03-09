@@ -9,11 +9,12 @@ image_resource:
 
 inputs:
   - name: bosh-dns-release
+  - name: candidate-release
   - name: envs
   - name: bosh-candidate-stemcell-windows
 
 run:
-  path: bosh-dns-release/ci/tasks/test-acceptance-windows-nameserver-disabled.sh
+  path: bosh-dns-release/ci/tasks/windows/test-acceptance-windows.sh
 
 params:
   ENV_NAME: default

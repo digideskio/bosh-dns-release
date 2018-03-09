@@ -10,4 +10,4 @@ run:
   - "-ExecutionPolicy"
   - "Bypass"
   - "-File"
-  - bosh-dns-release/ci/tasks/test-unit.ps1
+  - bosh-dns-release/ci/tasks/windows/test-unit.ps1

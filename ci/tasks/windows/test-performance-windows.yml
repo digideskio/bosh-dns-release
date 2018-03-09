@@ -14,4 +14,4 @@ run:
   - "-ExecutionPolicy"
   - "Bypass"
   - "-File"
-  - bosh-dns-release/ci/tasks/test-performance-windows.ps1
+  - bosh-dns-release/ci/tasks/windows/test-performance-windows.ps1

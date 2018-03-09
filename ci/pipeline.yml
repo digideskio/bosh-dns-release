@@ -45,7 +45,7 @@ jobs:
       trigger: true
     - task: test-unit-windows
       timeout: 1h
-      file: bosh-dns-release/ci/tasks/test-unit-windows.yml
+      file: bosh-dns-release/ci/tasks/windows/test-unit-windows.yml
 
 - name: test-unit-release
   public: true
@@ -99,7 +99,7 @@ jobs:
       trigger: true
       passed: [create-release]
     - task: test-performance
-      file: bosh-dns-release/ci/tasks/test-performance-windows.yml
+      file: bosh-dns-release/ci/tasks/windows/test-performance-windows.yml
       timeout: 1h
       params:
         ZONES_JSON_HASH: {{zones_json_hash}}
@@ -145,15 +145,15 @@ jobs:
         trigger: true
         passed: [create-release]
     - task: windows
-      file: bosh-dns-release/ci/tasks/test-acceptance-windows.yml
+      file: bosh-dns-release/ci/tasks/windows/test-acceptance-windows.yml
       params:
         WINDOWS_OS_VERSION: windows2012R2
       timeout: 1h
     - task: windows-nameserver-disabled
-      file: bosh-dns-release/ci/tasks/test-acceptance-windows-nameserver-disabled.yml
+      file: bosh-dns-release/ci/tasks/windows/test-acceptance-windows-nameserver-disabled.yml
       timeout: 1h
     - task: windows-shared
-      file: bosh-dns-release/ci/tasks/test-acceptance-windows-shared.yml
+      file: bosh-dns-release/ci/tasks/windows/test-acceptance-windows-shared.yml
       timeout: 1h
 
 - name: test-acceptance-windows2016
@@ -178,21 +178,21 @@ jobs:
         - create-release
         trigger: true
     - task: windows
-      file: bosh-dns-release/ci/tasks/test-acceptance-windows.yml
+      file: bosh-dns-release/ci/tasks/windows/test-acceptance-windows.yml
       params:
         WINDOWS_OS_VERSION: windows2016
       input_mapping:
         bosh-candidate-stemcell-windows: bosh-candidate-stemcell-windows2016
       timeout: 1h
     - task: windows-nameserver-disabled
-      file: bosh-dns-release/ci/tasks/test-acceptance-windows-nameserver-disabled.yml
+      file: bosh-dns-release/ci/tasks/windows/test-acceptance-windows-nameserver-disabled.yml
       params:
         WINDOWS_OS_VERSION: windows2016
       input_mapping:
         bosh-candidate-stemcell-windows: bosh-candidate-stemcell-windows2016
       timeout: 1h
     - task: windows-shared
-      file: bosh-dns-release/ci/tasks/test-acceptance-windows-shared.yml
+      file: bosh-dns-release/ci/tasks/windows/test-acceptance-windows-shared.yml
       params:
         WINDOWS_OS_VERSION: windows2016
       input_mapping:
