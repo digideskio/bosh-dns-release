@@ -292,8 +292,7 @@ jobs:
   - windows-acceptance-env
   plan:
     - get: bosh-dns-release
-    - get: env-repo
-      resource: envs
+    - get: envs
     - task: bbl-destroy
       file: bosh-dns-release/ci/tasks/bbl-destroy.yml
       params:
