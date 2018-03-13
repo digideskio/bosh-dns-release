@@ -1,0 +1,106 @@
+---
+groups:
+- name: all
+  jobs:
+  - test-stress
+
+jobs:
+- name: test-stress
+  public: false
+  serial: true
+  plan:
+    - aggregate:
+      - get: bosh-dns-release
+        trigger: true
+        passed: [create-release]
+      - get: bbl-state
+        resource: envs
+      - get: bosh-deployment
+      - get: docker-release
+      - get: stemcell
+      - get: warden-stemcell
+      - get: bosh-docker-cpi-release
+        resource: bosh-docker-cpi-release-git
+    - do:
+      - task: setup-env
+        file: bosh-dns-release/ci/tasks/test-stress/setup-env.yml
+        params:
+          BBL_AWS_ACCESS_KEY_ID: {{bbl_test_stress_access_key_id}}
+          BBL_AWS_SECRET_ACCESS_KEY: {{bbl_test_stress_secret_access_key}}
+          BBL_AWS_REGION: us-west-2
+          BBL_IAAS: aws
+          BBL_STATE_DIR: test-stress/bbl-state
+        ensure:
+          put: envs
+          params:
+            repository: updated-bbl-state
+      - task: deploy-docker-vms
+        file: bosh-dns-release/ci/tasks/test-stress/deploy-docker.yml
+        input_mapping:
+          bbl-state: updated-bbl-state
+      - task: deploy-containers
+        file: bosh-dns-release/ci/tasks/test-stress/deploy-n.yml
+        input_mapping:
+          stemcell: warden-stemcell
+          bbl-state: updated-bbl-state
+      - task: stress-containers
+        file: bosh-dns-release/ci/tasks/test-stress/run-errand.yml
+        input_mapping:
+          bbl-state: updated-bbl-state
+      ensure:
+        task: destroy-env
+        file: bosh-dns-release/ci/tasks/test-stress/destroy-env.yml
+        input_mapping:
+          bbl-state: updated-bbl-state
+        params:
+          BBL_AWS_ACCESS_KEY_ID: {{bbl_test_stress_access_key_id}}
+          BBL_AWS_SECRET_ACCESS_KEY: {{bbl_test_stress_secret_access_key}}
+          BBL_STATE_DIR: test-stress/bbl-state
+        ensure:
+          put: envs
+          params:
+            repository: bbl-state
+
+resources:
+- name: bosh-dns-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/bosh-dns-release
+    branch: new-test-stress
+    private_key: {{github_deployment_key}}
+    ignore_paths:
+    - ci/docker
+
+- name: bosh-deployment
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/bosh-deployment
+    branch: master
+
+- name: bosh-docker-cpi-release-git
+  type: git
+  source:
+    uri: https://github.com/cppforlife/bosh-docker-cpi-release
+    branch: master
+
+- name: docker-release
+  type: bosh-io-release
+  source:
+    repository: cppforlife/docker-release
+
+- name: envs
+  type: git
+  source:
+    branch: new-test-stress
+    uri: git@github.com:cloudfoundry/dns-release-ci-envs.git
+    private_key: {{envs_private_key}}
+
+- name: stemcell
+  type: bosh-io-stemcell
+  source:
+    name: bosh-aws-xen-hvm-ubuntu-trusty-go_agent
+
+- name: warden-stemcell
+  type: bosh-io-stemcell
+  source:
+    name: bosh-warden-boshlite-ubuntu-trusty-go_agent
