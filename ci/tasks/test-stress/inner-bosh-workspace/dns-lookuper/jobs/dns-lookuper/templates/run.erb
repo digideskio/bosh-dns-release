@@ -21,6 +21,7 @@ for deployment_index in $(seq 1 $DEPLOYMENT_COUNT); do
       # output some extra debug in case of failure
       dig upcheck.bosh-dns
       uptime
+      dig "${host}"
     else
       success=$((success+1))
     fi
