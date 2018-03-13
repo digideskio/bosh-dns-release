@@ -16,12 +16,13 @@ for deployment_index in $(seq 1 $DEPLOYMENT_COUNT); do
     dig_result="$(dig "${host}")"
     if [[ -z "$(echo ${dig_result} | grep "status:\sNOERROR")" ]] ; then
       failure=$((failure+1))
-      echo "Failed to lookup ${host}" >> /var/vcap/sys/log/dns-lookuper/stdout.log
-      echo "${dig_result}" >> /var/vcap/sys/log/dns-lookuper/stdout.log
+      echo "Failed to lookup ${host}"
+      echo "${dig_result}"
 
       # output some extra debug in case of failure
-      dig upcheck.bosh-dns >> /var/vcap/sys/log/dns-lookuper/stdout.log
-      uptime >> /var/vcap/sys/log/dns-lookuper/stdout.log
+      dig upcheck.bosh-dns
+      uptime
+      dig "${host}"
     else
       success=$((success+1))
     fi

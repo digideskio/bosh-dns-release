@@ -12,7 +12,7 @@ main() {
     # Run test
     seq 1 "${DEPLOYMENTS_OF_100}" \
       | xargs -n1 -P"${PARALLEL_DEPLOYMENTS}" -I{} \
-      -- bosh -d bosh-dns-{} run-errand dns-lookuper --download-logs --logs-dir=$logs_dir
+      -- bosh -d bosh-dns-{} run-errand dns-lookuper
   popd
 }
 
