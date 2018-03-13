@@ -14,9 +14,7 @@ for deployment_index in $(seq 1 $DEPLOYMENT_COUNT); do
   for instance_index in $(seq 0 $(($INSTANCE_COUNT-1))); do
     host="q-i${instance_index}.bosh-dns.default.${DEPLOYMENT_NAME_PREFIX}-${deployment_index}.bosh"
     dig_result="$(dig "${host}")"
-    grep_for_query_success=$(echo ${dig_result} | grep "status:\sNOERROR")
-
-    if [[ -z "${grep_for_query_success}" ]] ; then
+    if [[ -z "$(echo ${dig_result} | grep "status:\sNOERROR")" ]] ; then
       failure=$((failure+1))
       echo "Failed to lookup ${host}" >> /var/vcap/sys/log/dns-lookuper/stdout.log
       echo "${dig_result}" >> /var/vcap/sys/log/dns-lookuper/stdout.log

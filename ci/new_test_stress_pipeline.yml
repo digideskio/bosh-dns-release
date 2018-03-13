@@ -12,7 +12,6 @@ jobs:
     - aggregate:
       - get: bosh-dns-release
         trigger: true
-        passed: [create-release]
       - get: bbl-state
         resource: envs
       - get: bosh-deployment
