@@ -58,7 +58,8 @@ jobs:
         ensure:
           put: envs
           params:
-            repository: bbl-state
+            repository: updated-bbl-state
+            rebase: true
 
 resources:
 - name: bosh-dns-release
