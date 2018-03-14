@@ -45,7 +45,7 @@ deploy_n() {
       -v deployment_name=bosh-dns-{} \
       -v dns_lookuper_release=dns-lookuper \
       -v deployment_count=$deployment_count \
-      -v instances=100
+      -v instances=80
 }
 
 export BBL_STATE_DIR=$PWD/bbl-state/${BBL_STATE_SUBDIRECTORY}
