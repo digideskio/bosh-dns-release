@@ -52,7 +52,7 @@ deploy_n() {
         -v deployment_name=bosh-dns-{} \
         -v dns_lookuper_release=dns-lookuper \
         -v deployment_count=$deployment_count \
-        -v instances=100
+        -v instances=80
   popd
 }
 
