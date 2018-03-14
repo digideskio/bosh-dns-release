@@ -12,7 +12,7 @@ inputs:
   - name: bosh-dns-release
 
 outputs:
-  - name: updated-bbl-state
+  - name: cleanup-bbl-state
 
 params:
   BBL_AWS_ACCESS_KEY_ID: ""

@@ -58,7 +58,7 @@ jobs:
         ensure:
           put: envs
           params:
-            repository: updated-bbl-state
+            repository: cleanup-bbl-state
             rebase: true
 
 resources:

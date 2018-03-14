@@ -22,6 +22,8 @@ commit_bbl_state_dir() {
   root_dir="${1}"
   local commit_message
   commit_message="${2}"
+  local output_dir
+  output_dir="${3}"
 
   pushd "${root_dir}/bbl-state/${BBL_STATE_DIR}"
     if [[ -n $(git status --porcelain) ]]; then
@@ -34,7 +36,7 @@ commit_bbl_state_dir() {
 
   pushd "${root_dir}"
     shopt -s dotglob
-    cp -R "bbl-state/." "updated-bbl-state/"
+    cp -R "bbl-state/." "${output_dir}"
   popd
 }
 
