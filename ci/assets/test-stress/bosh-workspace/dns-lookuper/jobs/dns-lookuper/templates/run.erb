@@ -13,8 +13,8 @@ mkdir -p /var/vcap/sys/log/dns-lookuper/
 for deployment_index in $(seq 1 $DEPLOYMENT_COUNT); do
   for instance_index in $(seq 0 $(($INSTANCE_COUNT-1))); do
     host="q-i${instance_index}.bosh-dns.docker-net.${DEPLOYMENT_NAME_PREFIX}-${deployment_index}.bosh"
-    dig_result="$( { time dig "${host}"; } 2>&1)"
-    if [[ "$?" == "0" ]]; then
+    predate=$(date)
+    if [[ -z "$(dig +short ${host})" ]] ; then
       success=$((success+1))
     else
       failure=$((failure+1))
@@ -22,8 +22,15 @@ for deployment_index in $(seq 1 $DEPLOYMENT_COUNT); do
       echo "${dig_result}"
 
       # output some extra debug in case of failure
+      echo "Date before dig: ${predate}"
+      date
       dig upcheck.bosh-dns
       uptime
+      echo "ps output"
+      ps awwlx --sort=vsz
+      echo "vmstat output"
+      vmstat
+      echo "Extra dig"
       dig "${host}"
     fi
   done
