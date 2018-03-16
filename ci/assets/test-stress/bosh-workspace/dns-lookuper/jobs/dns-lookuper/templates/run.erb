@@ -1,6 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 
+uptime
+sleep 900
+uptime
+
 export DEPLOYMENT_NAME_PREFIX=<%= p('deployment_name_prefix') %>
 export DEPLOYMENT_COUNT=<%= p('deployment_count') %>
 export INSTANCE_COUNT=<%= p('instance_count') %>
@@ -19,7 +23,6 @@ for deployment_index in $(seq 1 $DEPLOYMENT_COUNT); do
     else
       failure=$((failure+1))
       echo "Failed to lookup ${host}"
-      echo "${dig_result}"
 
       # output some extra debug in case of failure
       echo "Date before dig: ${predate}"
