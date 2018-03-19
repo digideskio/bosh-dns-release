@@ -407,7 +407,7 @@ resources:
 - name: bosh-docker-cpi-release
   type: bosh-io-release
   source:
-    repository: cloudfoundry/bosh-docker-cpi-release
+    repository: cppforlife/bosh-docker-cpi-release
 
 - name: bosh-candidate-stemcell
   type: s3

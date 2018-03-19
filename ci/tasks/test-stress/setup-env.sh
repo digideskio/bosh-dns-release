@@ -6,7 +6,7 @@ main() {
   trap "commit_bbl_state_dir ${bbl_state_env_repo_dir} ${BBL_STATE_DIR} ${output_dir} 'Update bbl state dir'" EXIT
 
   export TEST_STRESS_ASSETS=$PWD/bosh-dns-release/ci/assets/test-stress
-  export BOSH_DOCKER_CPI_RELEASE_TARBALL=$PWD/bosh-docker-cpi-release/*.tgz
+  export BOSH_DOCKER_CPI_RELEASE_TARBALL="$( echo $PWD/bosh-docker-cpi-release/*.tgz )"
 
   mkdir -p bbl-state/${BBL_STATE_DIR}
 
