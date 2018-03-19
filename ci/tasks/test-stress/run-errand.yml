@@ -11,8 +11,6 @@ inputs:
   - name: bbl-state
   - name: bosh-dns-release
 
-outputs: []
-
 params:
   DEPLOYMENTS_OF_100: 10
   PARALLEL_DEPLOYMENTS: 10

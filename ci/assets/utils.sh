@@ -8,7 +8,7 @@ kill_ssh() {
 }
 
 source_bbl_env() {
-  local bbl_state_dir=$1
+  local bbl_state_dir=${1?'BBL state directory is required.'}
 
   trap kill_ssh EXIT
 
@@ -18,14 +18,12 @@ source_bbl_env() {
 }
 
 commit_bbl_state_dir() {
-  local root_dir
-  root_dir="${1}"
-  local commit_message
-  commit_message="${2}"
-  local output_dir
-  output_dir="${3}"
+  local input_dir=${1?'Input git repository absolute path is required.'}
+  local bbl_state_dir=${2?'BBL state relative path is required.'}
+  local output_dir=${3?'Output git repository absolute path is required.'}
+  local commit_message=${4:-'Update bbl state.'}
 
-  pushd "${root_dir}/bbl-state/${BBL_STATE_DIR}"
+  pushd "${input_dir}/${bbl_state_dir}"
     if [[ -n $(git status --porcelain) ]]; then
       git config user.name "CI Bot"
       git config user.email "cf-release-integration@pivotal.io"
@@ -34,20 +32,18 @@ commit_bbl_state_dir() {
     fi
   popd
 
-  pushd "${root_dir}"
-    shopt -s dotglob
-    cp -R "bbl-state/." "${output_dir}"
-  popd
+  shopt -s dotglob
+  cp -R "${input_dir}/." "${output_dir}"
 }
 
 clean_up_director() {
-  local deployment=$1
+  local deployment_name=${1}
 
   # Ensure the environment is clean
-  if [[ -z "$deployment" ]]; then
+  if [[ -z "$deployment_name" ]]; then
     bosh deployments --column=name | xargs -n1 bosh delete-deployment --force -n -d
   else
-    bosh delete-deployment -d $deployment -n --force
+    bosh delete-deployment -d $deployment_name -n --force
   fi
 
   # Clean-up old artifacts

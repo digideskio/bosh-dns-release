@@ -13,8 +13,6 @@ inputs:
   - name: docker-vars
   - name: stemcell
 
-outputs: []
-
 params:
   DEPLOYMENTS_OF_100: 10
   PARALLEL_DEPLOYMENTS: 5

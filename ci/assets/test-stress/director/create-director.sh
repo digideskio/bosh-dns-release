@@ -15,7 +15,7 @@ bosh int \
   -o ${TEST_STRESS_ASSETS}/director/ops/configure-workers.yml \
   -o ${TEST_STRESS_ASSETS}/director/ops/configure-pg-max-connections.yml \
   -l ${TEST_STRESS_ASSETS}/director/vars.yml \
-  -v docker_cpi_release_tarball=$BOSH_DOCKER_CPI_RELEASE_REPO/release.tgz \
+  -v docker_cpi_release=$BOSH_DOCKER_CPI_RELEASE_TARBALL \
   > ${BBL_STATE_DIR}/director-manifest.yml
 
 bosh create-env ${BBL_STATE_DIR}/director-manifest.yml \

@@ -217,7 +217,6 @@ jobs:
       - get: stemcell
       - get: warden-stemcell
       - get: bosh-docker-cpi-release
-        resource: bosh-docker-cpi-release-git
     - do:
       - task: setup-env
         file: bosh-dns-release/ci/tasks/test-stress/setup-env.yml
@@ -256,7 +255,8 @@ jobs:
         ensure:
           put: envs
           params:
-            repository: bbl-state
+            repository: cleanup-bbl-state
+            rebase: true
 
 - name: brats-ubuntu
   serial: true
@@ -399,16 +399,15 @@ resources:
     uri: https://github.com/cloudfoundry/bosh-deployment
     branch: master
 
-- name: bosh-docker-cpi-release-git
-  type: git
-  source:
-    uri: https://github.com/cppforlife/bosh-docker-cpi-release
-    branch: master
-
 - name: docker-release
   type: bosh-io-release
   source:
     repository: cppforlife/docker-release
+
+- name: bosh-docker-cpi-release
+  type: bosh-io-release
+  source:
+    repository: cloudfoundry/bosh-docker-cpi-release
 
 - name: bosh-candidate-stemcell
   type: s3

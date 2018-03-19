@@ -3,7 +3,7 @@
   path: /releases/-
   value:
     name: bosh-docker-cpi
-    url: file://((docker_cpi_release_tarball))
+    url: file://((docker_cpi_release))
     version: latest
 
 - type: replace
