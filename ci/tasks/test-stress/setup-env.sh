@@ -2,7 +2,8 @@
 main() {
   source $PWD/bosh-dns-release/ci/assets/utils.sh
   local output_dir="$PWD/updated-bbl-state/"
-  trap "commit_bbl_state_dir ${PWD} ${BBL_STATE_DIR} ${output_dir} 'Update bbl state dir'" EXIT
+  local bbl_state_env_repo_dir=$PWD/bbl-state
+  trap "commit_bbl_state_dir ${bbl_state_env_repo_dir} ${BBL_STATE_DIR} ${output_dir} 'Update bbl state dir'" EXIT
 
   export TEST_STRESS_ASSETS=$PWD/bosh-dns-release/ci/assets/test-stress
   export BOSH_DOCKER_CPI_RELEASE_TARBALL=$PWD/bosh-docker-cpi-release/*.tgz

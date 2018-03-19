@@ -19,7 +19,6 @@ jobs:
       - get: stemcell
       - get: warden-stemcell
       - get: bosh-docker-cpi-release
-        resource: bosh-docker-cpi-release-git
     - do:
       - task: setup-env
         file: bosh-dns-release/ci/tasks/test-stress/setup-env.yml
@@ -33,19 +32,6 @@ jobs:
           put: envs
           params:
             repository: updated-bbl-state
-      - task: deploy-docker-vms
-        file: bosh-dns-release/ci/tasks/test-stress/deploy-docker.yml
-        input_mapping:
-          bbl-state: updated-bbl-state
-      - task: deploy-containers
-        file: bosh-dns-release/ci/tasks/test-stress/deploy-n.yml
-        input_mapping:
-          stemcell: warden-stemcell
-          bbl-state: updated-bbl-state
-      - task: stress-containers
-        file: bosh-dns-release/ci/tasks/test-stress/run-errand.yml
-        input_mapping:
-          bbl-state: updated-bbl-state
       ensure:
         task: destroy-env
         file: bosh-dns-release/ci/tasks/test-stress/destroy-env.yml
@@ -77,11 +63,10 @@ resources:
     uri: https://github.com/cloudfoundry/bosh-deployment
     branch: master
 
-- name: bosh-docker-cpi-release-git
-  type: git
+- name: bosh-docker-cpi-release
+  type: bosh-io-release
   source:
-    uri: https://github.com/cppforlife/bosh-docker-cpi-release
-    branch: master
+    repository: cloudfoundry/bosh-docker-cpi-release
 
 - name: docker-release
   type: bosh-io-release
